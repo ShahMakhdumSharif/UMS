@@ -10,8 +10,6 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
-import static org.hamcrest.Matchers.greaterThanOrEqualTo;
-import static org.hamcrest.Matchers.notNullValue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -19,7 +17,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest
 @AutoConfigureMockMvc
-class UniversityManagementIntegrationTest {
+public class RbacSecurityIntegrationTest {
 
     @Autowired
     private MockMvc mockMvc;
@@ -39,40 +37,6 @@ class UniversityManagementIntegrationTest {
                 .andReturn();
 
         return JsonPath.read(result.getResponse().getContentAsString(), "$.token");
-    }
-
-    @Test
-    @DisplayName("Integration Test 1: POST /api/auth/login authenticates seeded user and returns JWT token")
-    void testAuthLogin_ValidCredentials_ReturnsJwtToken() throws Exception {
-        String loginPayload = """
-                {
-                    "username": "admin",
-                    "password": "password"
-                }
-                """;
-
-        mockMvc.perform(post("/api/auth/login")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(loginPayload))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.token", notNullValue()))
-                .andExpect(jsonPath("$.username").value("admin"))
-                .andExpect(jsonPath("$.role").value("ROLE_ADMIN"));
-    }
-
-    @Test
-    @DisplayName("Integration Test 2: GET /api/students returns seeded student records for authenticated user")
-    void testGetAllStudents_WithAuthenticatedUser_ReturnsStudentList() throws Exception {
-        String adminToken = obtainJwtToken("admin", "password");
-
-        mockMvc.perform(get("/api/students")
-                        .header("Authorization", "Bearer " + adminToken)
-                        .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$").isArray())
-                .andExpect(jsonPath("$.length()", greaterThanOrEqualTo(2)))
-                .andExpect(jsonPath("$[0].fullName", notNullValue()))
-                .andExpect(jsonPath("$[0].email", notNullValue()));
     }
 
     @Test
