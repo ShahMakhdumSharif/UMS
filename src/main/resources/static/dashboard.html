@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>University Management System - Dashboard</title>
+</head>
+<body>
+    <header>
+        <h1>Dashboard</h1>
+        <table width="100%" cellpadding="4" cellspacing="0">
+            <tr>
+                <td>Logged in as: <strong id="userName"></strong> (<span id="userEmail"></span>) - Role: <strong id="userRoleBadge"></strong></td>
+                <td align="right"><button onclick="logout()"><strong>Logout</strong></button></td>
+            </tr>
+        </table>
+    </header>
+    <hr>
+
+    <main>
+        <h2>Select a Category</h2>
+        <p>Click any button below to view and manage the respective directory:</p>
+        <p>
+            <button onclick="window.location.href='/ums/dashboard/admin'"><strong>Admin</strong></button>
+            &nbsp;&nbsp;
+            <button onclick="window.location.href='/ums/dashboard/teacher'"><strong>Teacher</strong></button>
+            &nbsp;&nbsp;
+            <button onclick="window.location.href='/ums/dashboard/student'"><strong>Student</strong></button>
+        </p>
+    </main>
+
+    <script src="/js/dashboard.js"></script>
+    <script>
+        const auth = getAuth();
+        if (auth) {
+            document.getElementById('userName').textContent = auth.user.fullName || auth.user.username;
+            document.getElementById('userEmail').textContent = auth.user.email || '';
+            const roleName = auth.user.role.replace('ROLE_', '');
+            document.getElementById('userRoleBadge').textContent = roleName;
+        }
+    </script>
+</body>
+</html>

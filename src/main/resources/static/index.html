@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>University Management System - Login</title>
+</head>
+<body>
+    <header>
+        <h1>University Management System</h1>
+        <p>Please log in with your credentials to access your dashboard.</p>
+    </header>
+    <hr>
+
+    <main>
+        <section>
+            <form id="loginForm" onsubmit="handleLogin(event)">
+                <fieldset>
+                    <legend><strong>User Login</strong></legend>
+                    <br>
+                    <table cellpadding="6" cellspacing="0">
+                        <tr>
+                            <td><label for="usernameInput"><strong>Username:</strong></label></td>
+                            <td><input type="text" id="usernameInput" required autocomplete="username" size="30"></td>
+                        </tr>
+                        <tr>
+                            <td><label for="passwordInput"><strong>Password:</strong></label></td>
+                            <td><input type="password" id="passwordInput" required autocomplete="current-password" size="30"></td>
+                        </tr>
+                        <tr>
+                            <td></td>
+                            <td>
+                                <br>
+                                <button type="submit"><strong>Sign In</strong></button>
+                            </td>
+                        </tr>
+                    </table>
+                </fieldset>
+            </form>
+            <p id="loginError" hidden></p>
+        </section>
+    </main>
+
+    <script>
+        // Check if already logged in and redirect to dashboard
+        const token = localStorage.getItem('token');
+        const userStr = localStorage.getItem('user');
+        if (token && userStr) {
+            window.location.href = '/ums/dashboard';
+        }
+
+        async function handleLogin(e) {
+            e.preventDefault();
+            const errorP = document.getElementById('loginError');
+            errorP.hidden = true;
+
+            const username = document.getElementById('usernameInput').value.trim();
+            const password = document.getElementById('passwordInput').value.trim();
+
+            try {
+                const res = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+
+                const data = await res.json();
+                if (!res.ok) {
+                    throw new Error(data.message || 'Login failed');
+                }
+
+                localStorage.setItem('token', data.token);
+                localStorage.setItem('user', JSON.stringify({
+                    username: data.username,
+                    role: data.role,
+                    fullName: data.fullName,
+                    email: data.email
+                }));
+
+                window.location.href = '/ums/dashboard';
+            } catch (err) {
+                errorP.textContent = 'Error: ' + err.message;
+                errorP.hidden = false;
+            }
+        }
+    </script>
+</body>
+</html>

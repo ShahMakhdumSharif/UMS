@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Management - University Management System</title>
+</head>
+<body>
+    <header>
+        <h1>Student Management</h1>
+        <table width="100%" cellpadding="4" cellspacing="0">
+            <tr>
+                <td>Logged in as: <strong id="userName"></strong> (<span id="userEmail"></span>) - Role: <strong id="userRoleBadge"></strong></td>
+                <td align="right">
+                    <button onclick="window.location.href='/ums/dashboard'">Back to Dashboard</button>
+                    &nbsp;
+                    <button onclick="logout()"><strong>Logout</strong></button>
+                </td>
+            </tr>
+        </table>
+    </header>
+    <hr>
+
+    <main>
+        <p>
+            <button id="addStudentBtn" onclick="openCreate()">+ Add New Student</button>
+        </p>
+
+        <table border="1" cellpadding="8" cellspacing="0" width="100%">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Student ID</th>
+                    <th>Username</th>
+                    <th>Full Name</th>
+                    <th>Email</th>
+                    <th>Department</th>
+                    <th>Semester</th>
+                    <th>CGPA</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="studentsTableBody">
+                <tr><td colspan="9" align="center">Loading students...</td></tr>
+            </tbody>
+        </table>
+    </main>
+
+    <!-- Dialog for Create / Edit -->
+    <dialog id="crudDialog">
+        <h3 id="dialogTitle">Student Record</h3>
+        <form id="crudForm" onsubmit="handleFormSubmit(event)">
+            <input type="hidden" id="recordId">
+            <fieldset>
+                <legend><strong id="dialogLegend">Student Details</strong></legend>
+                <div id="dialogFields"></div>
+                <br>
+                <button type="submit"><strong>Save</strong></button>
+                <button type="button" onclick="closeDialog()">Cancel</button>
+            </fieldset>
+        </form>
+    </dialog>
+
+    <script src="/js/dashboard.js"></script>
+    <script>
+        const auth = getAuth();
+        let studentList = [];
+
+        if (auth) {
+            document.getElementById('userName').textContent = auth.user.fullName || auth.user.username;
+            document.getElementById('userEmail').textContent = auth.user.email || '';
+            document.getElementById('userRoleBadge').textContent = auth.user.role.replace('ROLE_', '');
+            document.getElementById('addStudentBtn').hidden = !canCreateItem('students', auth.user);
+            loadStudents();
+        }
+
+        async function loadStudents() {
+            try {
+                studentList = await apiRequest('/api/students') || [];
+                renderStudents();
+            } catch (err) {
+                alert('Error loading students: ' + err.message);
+            }
+        }
+
+        function renderStudents() {
+            const tbody = document.getElementById('studentsTableBody');
+            if (studentList.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="9" align="center">No students found.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = studentList.map(s => {
+                const canModify = canModifyItem('students', s, auth.user);
+                return `
+                    <tr>
+                        <td align="center">${s.id}</td>
+                        <td><strong>${escapeHtml(s.studentId)}</strong></td>
+                        <td>${escapeHtml(s.username)}</td>
+                        <td>${escapeHtml(s.fullName)}</td>
+                        <td>${escapeHtml(s.email)}</td>
+                        <td>${escapeHtml(s.department)}</td>
+                        <td>${escapeHtml(s.semester || '-')}</td>
+                        <td align="center">${s.cgpa !== null && s.cgpa !== undefined ? Number(s.cgpa).toFixed(2) : '-'}</td>
+                        <td align="center">
+                            ${canModify ? `
+                                <button onclick="openEdit(${s.id})">Edit</button>
+                                <button onclick="deleteStudent(${s.id})">Delete</button>
+                            ` : '<em>View Only</em>'}
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function openCreate() {
+            if (!canCreateItem('students', auth.user)) {
+                alert('You do not have permission to add new students.');
+                return;
+            }
+
+            document.getElementById('recordId').value = '';
+            document.getElementById('dialogTitle').textContent = 'Add New Student';
+            document.getElementById('dialogLegend').textContent = 'Enter Student Information';
+
+            document.getElementById('dialogFields').innerHTML = `
+                <table cellpadding="4">
+                    <tr><td><strong>Student ID:</strong></td><td><input type="text" id="f_studentId" required placeholder="e.g. STU-2024-001"></td></tr>
+                    <tr><td><strong>Username:</strong></td><td><input type="text" id="f_username" required></td></tr>
+                    <tr><td><strong>Password:</strong></td><td><input type="password" id="f_password" placeholder="Default: password123"></td></tr>
+                    <tr><td><strong>Full Name:</strong></td><td><input type="text" id="f_fullName" required></td></tr>
+                    <tr><td><strong>Email:</strong></td><td><input type="email" id="f_email" required></td></tr>
+                    <tr><td><strong>Department:</strong></td><td><input type="text" id="f_department" required></td></tr>
+                    <tr><td><strong>Semester:</strong></td><td><input type="text" id="f_semester"></td></tr>
+                    <tr><td><strong>CGPA:</strong></td><td><input type="number" step="0.01" min="0" max="4" id="f_cgpa"></td></tr>
+                </table>
+            `;
+            document.getElementById('crudDialog').showModal();
+        }
+
+        function openEdit(id) {
+            const item = studentList.find(x => x.id === id);
+            if (!item) return;
+
+            if (!canModifyItem('students', item, auth.user)) {
+                alert('You do not have permission to modify this student.');
+                return;
+            }
+
+            document.getElementById('recordId').value = id;
+            document.getElementById('dialogTitle').textContent = `Edit Student #${id}`;
+            document.getElementById('dialogLegend').textContent = 'Update Student Information';
+
+            document.getElementById('dialogFields').innerHTML = `
+                <table cellpadding="4">
+                    <tr><td><strong>Student ID:</strong></td><td><input type="text" id="f_studentId" value="${escapeHtml(item.studentId)}" required></td></tr>
+                    <tr><td><strong>Username:</strong></td><td><input type="text" id="f_username" value="${escapeHtml(item.username)}" readonly></td></tr>
+                    <tr><td><strong>New Password:</strong></td><td><input type="password" id="f_password" placeholder="Leave blank to keep unchanged"></td></tr>
+                    <tr><td><strong>Full Name:</strong></td><td><input type="text" id="f_fullName" value="${escapeHtml(item.fullName)}" required></td></tr>
+                    <tr><td><strong>Email:</strong></td><td><input type="email" id="f_email" value="${escapeHtml(item.email)}" required></td></tr>
+                    <tr><td><strong>Department:</strong></td><td><input type="text" id="f_department" value="${escapeHtml(item.department)}" required></td></tr>
+                    <tr><td><strong>Semester:</strong></td><td><input type="text" id="f_semester" value="${escapeHtml(item.semester || '')}"></td></tr>
+                    <tr><td><strong>CGPA:</strong></td><td><input type="number" step="0.01" min="0" max="4" id="f_cgpa" value="${item.cgpa !== null && item.cgpa !== undefined ? item.cgpa : ''}"></td></tr>
+                </table>
+            `;
+            document.getElementById('crudDialog').showModal();
+        }
+
+        function closeDialog() {
+            document.getElementById('crudDialog').close();
+        }
+
+        async function handleFormSubmit(e) {
+            e.preventDefault();
+            const id = document.getElementById('recordId').value;
+            const isEdit = Boolean(id);
+
+            const payload = {
+                studentId: document.getElementById('f_studentId').value.trim(),
+                username: document.getElementById('f_username').value.trim(),
+                fullName: document.getElementById('f_fullName').value.trim(),
+                email: document.getElementById('f_email').value.trim(),
+                department: document.getElementById('f_department').value.trim(),
+                semester: document.getElementById('f_semester')?.value.trim()
+            };
+
+            const pw = document.getElementById('f_password')?.value;
+            if (pw && pw.trim().length > 0) payload.password = pw.trim();
+
+            const cgpa = document.getElementById('f_cgpa')?.value;
+            payload.cgpa = cgpa ? parseFloat(cgpa) : null;
+
+            try {
+                if (isEdit) {
+                    await apiRequest(`/api/students/${id}`, 'PUT', payload);
+                } else {
+                    await apiRequest('/api/students', 'POST', payload);
+                }
+                closeDialog();
+                loadStudents();
+            } catch (err) {
+                alert('Operation failed: ' + err.message);
+            }
+        }
+
+        async function deleteStudent(id) {
+            if (!confirm(`Are you sure you want to delete Student #${id}?`)) {
+                return;
+            }
+            try {
+                await apiRequest(`/api/students/${id}`, 'DELETE');
+                loadStudents();
+            } catch (err) {
+                alert('Delete failed: ' + err.message);
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teacher Management - University Management System</title>
+</head>
+<body>
+    <header>
+        <h1>Teacher Management</h1>
+        <table width="100%" cellpadding="4" cellspacing="0">
+            <tr>
+                <td>Logged in as: <strong id="userName"></strong> (<span id="userEmail"></span>) - Role: <strong id="userRoleBadge"></strong></td>
+                <td align="right">
+                    <button onclick="window.location.href='/ums/dashboard'">Back to Dashboard</button>
+                    &nbsp;
+                    <button onclick="logout()"><strong>Logout</strong></button>
+                </td>
+            </tr>
+        </table>
+    </header>
+    <hr>
+
+    <main>
+        <p>
+            <button id="addTeacherBtn" onclick="openCreate()">+ Add New Teacher</button>
+        </p>
+
+        <table border="1" cellpadding="8" cellspacing="0" width="100%">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Username</th>
+                    <th>Full Name</th>
+                    <th>Email</th>
+                    <th>Department</th>
+                    <th>Designation</th>
+                    <th>Phone</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="teachersTableBody">
+                <tr><td colspan="8" align="center">Loading teachers...</td></tr>
+            </tbody>
+        </table>
+    </main>
+
+    <!-- Dialog for Create / Edit -->
+    <dialog id="crudDialog">
+        <h3 id="dialogTitle">Teacher Record</h3>
+        <form id="crudForm" onsubmit="handleFormSubmit(event)">
+            <input type="hidden" id="recordId">
+            <fieldset>
+                <legend><strong id="dialogLegend">Teacher Details</strong></legend>
+                <div id="dialogFields"></div>
+                <br>
+                <button type="submit"><strong>Save</strong></button>
+                <button type="button" onclick="closeDialog()">Cancel</button>
+            </fieldset>
+        </form>
+    </dialog>
+
+    <script src="/js/dashboard.js"></script>
+    <script>
+        const auth = getAuth();
+        let teacherList = [];
+
+        if (auth) {
+            document.getElementById('userName').textContent = auth.user.fullName || auth.user.username;
+            document.getElementById('userEmail').textContent = auth.user.email || '';
+            document.getElementById('userRoleBadge').textContent = auth.user.role.replace('ROLE_', '');
+            document.getElementById('addTeacherBtn').hidden = !canCreateItem('teachers', auth.user);
+            loadTeachers();
+        }
+
+        async function loadTeachers() {
+            try {
+                teacherList = await apiRequest('/api/teachers') || [];
+                renderTeachers();
+            } catch (err) {
+                alert('Error loading teachers: ' + err.message);
+            }
+        }
+
+        function renderTeachers() {
+            const tbody = document.getElementById('teachersTableBody');
+            if (teacherList.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" align="center">No teachers found.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = teacherList.map(t => {
+                const canModify = canModifyItem('teachers', t, auth.user);
+                return `
+                    <tr>
+                        <td align="center">${t.id}</td>
+                        <td>${escapeHtml(t.username)}</td>
+                        <td>${escapeHtml(t.fullName)}</td>
+                        <td>${escapeHtml(t.email)}</td>
+                        <td>${escapeHtml(t.department)}</td>
+                        <td>${escapeHtml(t.designation || '-')}</td>
+                        <td>${escapeHtml(t.phone || '-')}</td>
+                        <td align="center">
+                            ${canModify ? `
+                                <button onclick="openEdit(${t.id})">Edit</button>
+                                <button onclick="deleteTeacher(${t.id})">Delete</button>
+                            ` : '<em>View Only</em>'}
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function openCreate() {
+            if (!canCreateItem('teachers', auth.user)) {
+                alert('You do not have permission to add new teachers.');
+                return;
+            }
+
+            document.getElementById('recordId').value = '';
+            document.getElementById('dialogTitle').textContent = 'Add New Teacher';
+            document.getElementById('dialogLegend').textContent = 'Enter Teacher Information';
+
+            document.getElementById('dialogFields').innerHTML = `
+                <table cellpadding="4">
+                    <tr><td><strong>Username:</strong></td><td><input type="text" id="f_username" required></td></tr>
+                    <tr><td><strong>Password:</strong></td><td><input type="password" id="f_password" placeholder="Default: password123"></td></tr>
+                    <tr><td><strong>Full Name:</strong></td><td><input type="text" id="f_fullName" required></td></tr>
+                    <tr><td><strong>Email:</strong></td><td><input type="email" id="f_email" required></td></tr>
+                    <tr><td><strong>Department:</strong></td><td><input type="text" id="f_department" required></td></tr>
+                    <tr><td><strong>Designation:</strong></td><td><input type="text" id="f_designation"></td></tr>
+                    <tr><td><strong>Phone:</strong></td><td><input type="text" id="f_phone"></td></tr>
+                </table>
+            `;
+            document.getElementById('crudDialog').showModal();
+        }
+
+        function openEdit(id) {
+            const item = teacherList.find(x => x.id === id);
+            if (!item) return;
+
+            if (!canModifyItem('teachers', item, auth.user)) {
+                alert('You can only modify your own profile.');
+                return;
+            }
+
+            document.getElementById('recordId').value = id;
+            document.getElementById('dialogTitle').textContent = `Edit Teacher #${id}`;
+            document.getElementById('dialogLegend').textContent = 'Update Teacher Information';
+
+            document.getElementById('dialogFields').innerHTML = `
+                <table cellpadding="4">
+                    <tr><td><strong>Username:</strong></td><td><input type="text" id="f_username" value="${escapeHtml(item.username)}" readonly></td></tr>
+                    <tr><td><strong>New Password:</strong></td><td><input type="password" id="f_password" placeholder="Leave blank to keep unchanged"></td></tr>
+                    <tr><td><strong>Full Name:</strong></td><td><input type="text" id="f_fullName" value="${escapeHtml(item.fullName)}" required></td></tr>
+                    <tr><td><strong>Email:</strong></td><td><input type="email" id="f_email" value="${escapeHtml(item.email)}" required></td></tr>
+                    <tr><td><strong>Department:</strong></td><td><input type="text" id="f_department" value="${escapeHtml(item.department)}" required></td></tr>
+                    <tr><td><strong>Designation:</strong></td><td><input type="text" id="f_designation" value="${escapeHtml(item.designation || '')}"></td></tr>
+                    <tr><td><strong>Phone:</strong></td><td><input type="text" id="f_phone" value="${escapeHtml(item.phone || '')}"></td></tr>
+                </table>
+            `;
+            document.getElementById('crudDialog').showModal();
+        }
+
+        function closeDialog() {
+            document.getElementById('crudDialog').close();
+        }
+
+        async function handleFormSubmit(e) {
+            e.preventDefault();
+            const id = document.getElementById('recordId').value;
+            const isEdit = Boolean(id);
+
+            const payload = {
+                username: document.getElementById('f_username').value.trim(),
+                fullName: document.getElementById('f_fullName').value.trim(),
+                email: document.getElementById('f_email').value.trim(),
+                department: document.getElementById('f_department').value.trim(),
+                designation: document.getElementById('f_designation')?.value.trim(),
+                phone: document.getElementById('f_phone')?.value.trim()
+            };
+
+            const pw = document.getElementById('f_password')?.value;
+            if (pw && pw.trim().length > 0) payload.password = pw.trim();
+
+            try {
+                if (isEdit) {
+                    await apiRequest(`/api/teachers/${id}`, 'PUT', payload);
+                } else {
+                    await apiRequest('/api/teachers', 'POST', payload);
+                }
+                closeDialog();
+                loadTeachers();
+            } catch (err) {
+                alert('Operation failed: ' + err.message);
+            }
+        }
+
+        async function deleteTeacher(id) {
+            if (!confirm(`Are you sure you want to delete Teacher #${id}?`)) {
+                return;
+            }
+            try {
+                await apiRequest(`/api/teachers/${id}`, 'DELETE');
+                loadTeachers();
+            } catch (err) {
+                alert('Delete failed: ' + err.message);
+            }
+        }
+    </script>
+</body>
+</html>
