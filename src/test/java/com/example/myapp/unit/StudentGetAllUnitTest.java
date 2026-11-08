@@ -41,16 +41,16 @@ public class StudentGetAllUnitTest {
     @Test
     @DisplayName("Unit Test 1: getAllStudents returns mapped list of StudentDto")
     void testGetAllStudents_ReturnsAllStudentDtos() {
-        User user = new User("johndoe", "encodedPass", Role.ROLE_STUDENT);
+        User user = new User("isaac", "password", Role.ROLE_STUDENT);
         user.setId(1L);
 
         Student student = new Student(
                 user,
-                "John Doe",
-                "john@university.edu",
-                "ST12345",
+                "Isaac Aneek Sarker",
+                "isaac@university.edu",
+                "2207095",
                 "Computer Science",
-                "Semester 4",
+                "Semester 6",
                 3.85
         );
         student.setId(1L);
@@ -61,9 +61,10 @@ public class StudentGetAllUnitTest {
 
         assertNotNull(result);
         assertEquals(1, result.size());
-        assertEquals("John Doe", result.get(0).getFullName());
-        assertEquals("john@university.edu", result.get(0).getEmail());
-        assertEquals("ST12345", result.get(0).getStudentId());
+        assertEquals("Isaac Aneek Sarker", result.get(0).getFullName());
+        assertEquals("isaac@university.edu", result.get(0).getEmail());
+        assertEquals("2207095", result.get(0).getStudentId());
         verify(studentRepository, times(1)).findAll();
     }
 }
+

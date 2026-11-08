@@ -39,3 +39,4 @@ public class AuthLoginIntegrationTest {
                 .andExpect(jsonPath("$.role").value("ROLE_ADMIN"));
     }
 }
+

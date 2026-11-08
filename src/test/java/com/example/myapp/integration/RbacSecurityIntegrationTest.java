@@ -53,9 +53,9 @@ public class RbacSecurityIntegrationTest {
         String studentToken = obtainJwtToken("habil", "password");
         String newAdminPayload = """
                 {
-                    "username": "rogueadmin",
-                    "fullName": "Rogue Admin",
-                    "email": "rogue@university.edu",
+                    "username": "Sharif",
+                    "fullName": "Shah Makhdum Sharif",
+                    "email": "sharif@university.edu",
                     "department": "Security",
                     "phone": "+8801700000000",
                     "officeRoom": "Room 404"
@@ -71,3 +71,4 @@ public class RbacSecurityIntegrationTest {
                 .andExpect(jsonPath("$.error").value("Forbidden"));
     }
 }
+

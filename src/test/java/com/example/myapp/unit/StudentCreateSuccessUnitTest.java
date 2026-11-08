@@ -48,21 +48,21 @@ public class StudentCreateSuccessUnitTest {
     @DisplayName("Unit Test 4: createStudent encodes password, saves user and student, and returns DTO")
     void testCreateStudent_WhenValidDto_SuccessfullyCreatesAndReturnsDto() {
         StudentDto inputDto = new StudentDto();
-        inputDto.setUsername("newstudent");
-        inputDto.setPassword("plainSecret");
-        inputDto.setFullName("Jane Doe");
-        inputDto.setEmail("jane@university.edu");
-        inputDto.setStudentId("ST67890");
+        inputDto.setUsername("isaac");
+        inputDto.setPassword("password");
+        inputDto.setFullName("Isaac Aneek Sarker");
+        inputDto.setEmail("isaac@university.edu");
+        inputDto.setStudentId("2207095");
         inputDto.setDepartment("Software Engineering");
-        inputDto.setSemester("Semester 1");
+        inputDto.setSemester("Semester 6");
         inputDto.setCgpa(3.90);
 
-        when(userRepository.existsByUsername("newstudent")).thenReturn(false);
-        when(studentRepository.existsByEmail("jane@university.edu")).thenReturn(false);
-        when(studentRepository.existsByStudentId("ST67890")).thenReturn(false);
-        when(passwordEncoder.encode("plainSecret")).thenReturn("hashedSecret");
+        when(userRepository.existsByUsername("isaac")).thenReturn(false);
+        when(studentRepository.existsByEmail("isaac@university.edu")).thenReturn(false);
+        when(studentRepository.existsByStudentId("2207095")).thenReturn(false);
+        when(passwordEncoder.encode("password")).thenReturn("hashedSecret");
 
-        User savedUser = new User("newstudent", "hashedSecret", Role.ROLE_STUDENT);
+        User savedUser = new User("isaac", "hashedSecret", Role.ROLE_STUDENT);
         savedUser.setId(2L);
         when(userRepository.save(any(User.class))).thenReturn(savedUser);
 
@@ -82,9 +82,10 @@ public class StudentCreateSuccessUnitTest {
 
         assertNotNull(created);
         assertEquals(2L, created.getId());
-        assertEquals("newstudent", created.getUsername());
-        assertEquals("Jane Doe", created.getFullName());
+        assertEquals("isaac", created.getUsername());
+        assertEquals("Isaac Aneek Sarker", created.getFullName());
         verify(userRepository, times(1)).save(any(User.class));
         verify(studentRepository, times(1)).save(any(Student.class));
     }
 }
+

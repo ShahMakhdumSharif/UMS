@@ -39,11 +39,11 @@ public class StudentCreateDuplicateUsernameUnitTest {
     @DisplayName("Unit Test 5: createStudent throws BadRequestException when username already exists")
     void testCreateStudent_WhenUsernameAlreadyExists_ThrowsBadRequestException() {
         StudentDto inputDto = new StudentDto();
-        inputDto.setUsername("johndoe");
-        inputDto.setEmail("john.unique@university.edu");
-        inputDto.setStudentId("ST99999");
+        inputDto.setUsername("ruhan");
+        inputDto.setEmail("rs.ruhan@university.edu");
+        inputDto.setStudentId("2207088");
 
-        when(userRepository.existsByUsername("johndoe")).thenReturn(true);
+        when(userRepository.existsByUsername("ruhan")).thenReturn(true);
 
         BadRequestException exception = assertThrows(
                 BadRequestException.class,
@@ -55,3 +55,4 @@ public class StudentCreateDuplicateUsernameUnitTest {
         verify(studentRepository, never()).save(any());
     }
 }
+

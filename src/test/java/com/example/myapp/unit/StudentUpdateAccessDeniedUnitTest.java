@@ -60,16 +60,16 @@ public class StudentUpdateAccessDeniedUnitTest {
         );
         SecurityContextHolder.getContext().setAuthentication(auth);
 
-        User sampleUser = new User("johndoe", "encodedPass", Role.ROLE_STUDENT);
+        User sampleUser = new User("isaac", "password", Role.ROLE_STUDENT);
         sampleUser.setId(1L);
 
         Student sampleStudent = new Student(
                 sampleUser,
-                "John Doe",
-                "john@university.edu",
-                "ST12345",
+                "Isaac Aneek Sarker",
+                "isaac@university.edu",
+                "2207095",
                 "Computer Science",
-                "Semester 4",
+                "Semester 6",
                 3.85
         );
         sampleStudent.setId(1L);
@@ -79,7 +79,7 @@ public class StudentUpdateAccessDeniedUnitTest {
         StudentDto updateDto = new StudentDto();
         updateDto.setFullName("Unauthorized Update");
         updateDto.setEmail("updated@university.edu");
-        updateDto.setStudentId("ST12345");
+        updateDto.setStudentId("2207096");
 
         AccessDeniedException exception = assertThrows(
                 AccessDeniedException.class,
@@ -90,3 +90,4 @@ public class StudentUpdateAccessDeniedUnitTest {
         verify(studentRepository, never()).save(any(Student.class));
     }
 }
+

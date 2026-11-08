@@ -56,3 +56,4 @@ public class StudentGetAllIntegrationTest {
                 .andExpect(jsonPath("$[0].email", notNullValue()));
     }
 }
+

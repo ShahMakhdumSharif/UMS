@@ -41,16 +41,16 @@ public class StudentGetByIdSuccessUnitTest {
     @Test
     @DisplayName("Unit Test 2: getStudentById returns StudentDto when student exists")
     void testGetStudentById_WhenStudentExists_ReturnsStudentDto() {
-        User user = new User("johndoe", "encodedPass", Role.ROLE_STUDENT);
+        User user = new User("isaac", "password", Role.ROLE_STUDENT);
         user.setId(1L);
 
         Student student = new Student(
                 user,
-                "John Doe",
-                "john@university.edu",
-                "ST12345",
+                "Isaac Aneek Sarker",
+                "isaac@university.edu",
+                "2207095",
                 "Computer Science",
-                "Semester 4",
+                "Semester 6",
                 3.85
         );
         student.setId(1L);
@@ -61,8 +61,8 @@ public class StudentGetByIdSuccessUnitTest {
 
         assertNotNull(result);
         assertEquals(1L, result.getId());
-        assertEquals("johndoe", result.getUsername());
-        assertEquals("John Doe", result.getFullName());
+        assertEquals("isaac", result.getUsername());
+        assertEquals("Isaac Aneek Sarker", result.getFullName());
         verify(studentRepository, times(1)).findById(1L);
     }
 }

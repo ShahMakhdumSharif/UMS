@@ -49,3 +49,4 @@ public class StudentGetByIdNotFoundUnitTest {
         verify(studentRepository, times(1)).findById(999L);
     }
 }
+
